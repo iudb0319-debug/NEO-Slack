@@ -1,78 +1,80 @@
-// ==========================================
-// 設定：GASのウェブアプリURLをここに貼り付け
-// ==========================================
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzokkETRouEg5AHNQWiuBGDJiRfakItv34fqrHB9Oore1Hnz6vepi7NQ0VN2wZLg3yTgQ/exec'; 
+const GAS_URL = 'YOUR_NEW_GAS_URL'; // 新しいデプロイURLに差し替え
 
-async function initDashboard() {
+async function loadData() {
     try {
-        // 1. ダッシュボード用データ（投稿＋属性）の取得
-        const response = await fetch(`${GAS_URL}?type=summary`);
-        const data = await response.json();
-        
-        renderRoleChart(data);
-        renderPostFeed(data);
-        
-        // 2. 週報とイベントの取得（これらは別のシートに保存されている前提）
-        // ※今回は簡易化のため、同じエンドポイントで取得する構成にしています
-        updateWeeklyAndEvents();
+        // 並列でデータ取得
+        const [resSum, resWeek, resEvent] = await Promise.all([
+            fetch(`${GAS_URL}?type=summary`).then(r => r.json()),
+            fetch(`${GAS_URL}?type=weekly`).then(r => r.json()),
+            fetch(`${GAS_URL}?type=events`).then(r => r.json())
+        ]);
 
-        document.getElementById('update-time').innerText = `最終更新: ${new Date().toLocaleTimeString()}`;
-    } catch (error) {
-        console.error('データの取得に失敗しました:', error);
-        document.getElementById('weekly-report').innerText = 'データの読み込みに失敗しました。';
+        renderSummary(resSum);
+        document.getElementById('weekly-report').innerText = resWeek.content;
+        renderEvents(resEvent);
+        document.getElementById('status').innerText = `最終更新: ${new Date().toLocaleTimeString()}`;
+    } catch (e) {
+        console.error(e);
+        document.getElementById('weekly-report').innerText = "データの取得に失敗しました。GASの公開設定を確認してください。";
     }
 }
 
-// 投稿者の属性分布グラフ
-function renderRoleChart(data) {
-    const roleCounts = {};
-    data.forEach(item => {
-        const role = item.role || '不明';
-        roleCounts[role] = (roleCounts[role] || 0) + 1;
-    });
-
-    const ctx = document.getElementById('roleChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut',
+function renderSummary(data) {
+    // グラフ描画
+    const counts = {};
+    data.forEach(d => counts[d.role] = (counts[d.role] || 0) + 1);
+    new Chart(document.getElementById('roleChart'), {
+        type: 'bar',
         data: {
-            labels: Object.keys(roleCounts),
-            datasets: [{
-                data: Object.values(roleCounts),
-                backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
-            }]
+            labels: Object.keys(counts),
+            datasets: [{ label: '投稿数', data: Object.values(counts), backgroundColor: '#0066FF' }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { indexAxis: 'y', plugins: { legend: { display: false } } }
     });
-}
 
-// 投稿フィードの描画
-function renderPostFeed(data) {
-    const feedContainer = document.getElementById('post-feed');
-    feedContainer.innerHTML = '';
-
-    // 直近20件を表示
-    data.slice().reverse().slice(0, 20).forEach(post => {
-        const card = document.createElement('div');
-        card.className = 'bg-white p-4 rounded-lg shadow border-l-4 border-blue-500';
-        card.innerHTML = `
-            <div class="flex items-center mb-2">
-                <span class="font-bold text-blue-600 mr-2">${post.userName}</span>
-                <span class="text-xs bg-gray-200 px-2 py-1 rounded">${post.role} / ${post.grade}</span>
-                <span class="ml-auto text-xs text-gray-400">${post.date}</span>
+    // フィード描画
+    const feed = document.getElementById('post-feed');
+    feed.innerHTML = data.slice(-20).reverse().map(p => `
+        <div class="border-b border-gray-100 pb-3">
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                <span>${p.userName} (${p.role})</span>
+                <span>${p.date}</span>
             </div>
-            <p class="text-sm text-gray-700">${post.text}</p>
-            <div class="mt-2 text-xs text-gray-400 italic"># ${post.channel}</div>
-        `;
-        feedContainer.appendChild(card);
-    });
+            <p class="text-sm">${p.text}</p>
+        </div>
+    `).join('');
 }
 
-// 週報とイベント（今回は仮のデータまたは追加fetchで対応）
-async function updateWeeklyAndEvents() {
-    // 本来は GAS_URL?type=weekly などを叩く
-    // ここではデモ用に「summary」のデータから簡易表示する例を記述可能ですが
-    // 基本的にはGAS側で作った weekly_reports シートの最新1件を出すのが理想です。
+function renderEvents(events) {
+    const container = document.getElementById('event-list');
+    if (events.length === 0) {
+        container.innerHTML = "<p class='text-sm opacity-80'>予定されているイベントはありません。</p>";
+        return;
+    }
+    container.innerHTML = events.map(e => `
+        <div class="bg-white/10 p-3 rounded border border-white/20">
+            <div class="text-xs font-bold">${e.date || '日時未定'}</div>
+            <div class="text-sm font-bold my-1">${e.title}</div>
+            <div class="text-[10px] opacity-70">📍 ${e.location || '場所不明'}</div>
+        </div>
+    `).join('');
 }
 
-// 実行
-initDashboard();
+async function manualUpdate() {
+    if (!confirm("AI分析を実行します。数十秒かかる場合があります。よろしいですか？")) return;
+    const btn = document.getElementById('updateBtn');
+    btn.disabled = true;
+    btn.innerText = "分析中...";
+    
+    try {
+        await fetch(`${GAS_URL}?type=update`);
+        alert("分析が完了しました。ページをリロードします。");
+        location.reload();
+    } catch (e) {
+        alert("エラーが発生しました。");
+        btn.disabled = false;
+        btn.innerText = "AI分析を手動実行";
+    }
+}
+
+loadData();
