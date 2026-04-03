@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slack Insight Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <nav class="bg-blue-600 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Slack Insight</h1>
+            <span id="update-time" class="text-sm">データ読み込み中...</span>
+        </div>
+    </nav>
+
+    <main class="container mx-auto py-8 px-4">
+        <section class="mb-10">
+            <h2 class="text-xl font-semibold mb-4 border-l-4 border-blue-600 pl-2">今週のまとめ（AI分析）</h2>
+            <div id="weekly-report" class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                <p class="animate-pulse text-gray-400">週報を読み込んでいます...</p>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+            <section>
+                <h2 class="text-xl font-semibold mb-4 border-l-4 border-blue-600 pl-2">投稿者属性分布</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md h-80 flex justify-center items-center">
+                    <canvas id="roleChart"></canvas>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-semibold mb-4 border-l-4 border-blue-600 pl-2">直近のイベント</h2>
+                <div id="event-list" class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase">日付</th>
+                                <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase">イベント内容</th>
+                            </tr>
+                        </thead>
+                        <tbody id="event-tbody" class="divide-y divide-gray-200">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <section>
+            <h2 class="text-xl font-semibold mb-4 border-l-4 border-blue-600 pl-2">最新の投稿フィード</h2>
+            <div id="post-feed" class="space-y-4">
+                </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
