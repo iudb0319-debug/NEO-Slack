@@ -1,7 +1,7 @@
 // ==========================================
 // 設定：GASのウェブアプリURLをここに貼り付け
 // ==========================================
-const GAS_URL = 'YOUR_GAS_WEB_APP_URL'; 
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzokkETRouEg5AHNQWiuBGDJiRfakItv34fqrHB9Oore1Hnz6vepi7NQ0VN2wZLg3yTgQ/exec'; 
 
 async function initDashboard() {
     try {
