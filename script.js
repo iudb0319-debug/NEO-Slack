@@ -1,4 +1,4 @@
-const GAS_URL = 'YOUR_NEW_GAS_URL'; // 新しいデプロイURLに差し替え
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzokkETRouEg5AHNQWiuBGDJiRfakItv34fqrHB9Oore1Hnz6vepi7NQ0VN2wZLg3yTgQ/exec'; // 新しいデプロイURLに差し替え
 
 async function loadData() {
     try {
